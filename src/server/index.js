@@ -1,9 +1,34 @@
-const express = require('express');
-const os = require('os');
-
+const express = require("express");
 const app = express();
+const path = require("path");
 
-app.use(express.static('dist'));
-app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
+const config = require("./config/constants");
 
-app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
+// connect to db
+const mongoose = require("mongoose");
+try {
+  mongoose.connect(
+    config.MONGO_URL,
+    { useNewUrlParser: true }
+  );
+  mongoose.set("useCreateIndex", true);
+} catch (err) {
+  console.log("ERROR", err);
+  mongoose.createConnection(config.MONGO_URL);
+}
+
+// serve React Application
+app.use(express.static("dist"));
+
+// serve static assets
+app.use("/assets", express.static(path.join(__dirname, "assets")));
+
+// api routes
+const routes = require("./routes");
+app.use(routes);
+
+app.listen(process.env.PORT || 8080, () =>
+  console.log(`Listening on port ${process.env.PORT || 8080}!`)
+);
+
+module.exports = app;
